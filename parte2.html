@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape, viewport-fit=cover">
+    <title>Pedra Mística 2 - Pântano das Almas Perdidas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            background: #0a1f0a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        canvas { 
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            border: 4px solid #1a3a1a;
+            box-shadow: 0 0 20px rgba(0,0,0,0.9);
+            background: #0a1f0a;
+            display: block;
+            margin: auto;
+        }
+
+        .overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(10,25,15,0.98); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 200; 
+            text-align: center; 
+            padding: 20px; 
+        }
+        
+        button { 
+            font-family: 'Press Start 2P', monospace; 
+            padding: 14px 30px; 
+            font-size: 14px; 
+            margin: 12px; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            touch-action: manipulation;
+        }
+        
+        .btn-green { 
+            background: #4a8c2f; 
+            box-shadow: inset -4px -4px 0px #2e5c1f, inset 4px 4px 0px #6eb24a, 0 4px 0 #000; 
+        }
+        
+        .btn-green:active { 
+            background: #3a6f24; 
+            transform: translateY(2px);
+        }
+        
+        .btn-red { 
+            background: #c23d3d; 
+            box-shadow: inset -4px -4px 0px #8b2a2a, inset 4px 4px 0px #e05555;
+        }
+        
+        .btn-red:active { 
+            transform: translateY(2px);
+        }
+        
+        .fragment-counter { 
+            font-size: 24px; 
+            color: #ff69b4; 
+            text-shadow: 0 0 10px #ff1493; 
+            margin: 15px 0; 
+            letter-spacing: 8px; 
+        }
+        
+        #mobileControls {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            display: none;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 150;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+        }
+        
+        .btn-touch {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #a3d977;
+            border-radius: 50px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #a3d977;
+            cursor: pointer;
+            touch-action: manipulation;
+            backdrop-filter: blur(5px);
+            font-weight: bold;
+        }
+        
+        .btn-touch:active {
+            background: rgba(163,217,119,0.5);
+            transform: scale(0.95);
+        }
+        
+        .btn-interact {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #ffaa44;
+            border-radius: 50px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffaa44;
+            cursor: pointer;
+            touch-action: manipulation;
+            backdrop-filter: blur(5px);
+            font-weight: bold;
+        }
+        
+        .btn-interact:active {
+            background: rgba(255,170,68,0.5);
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 900px) {
+            .btn-touch, .btn-interact {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            .control-group {
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .btn-touch, .btn-interact {
+                width: 55px;
+                height: 55px;
+                font-size: 20px;
+            }
+        }
+        
+        .orientation-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            color: #ff0000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="orientationWarning" class="orientation-warning">
+        <h2>📱 POR FAVOR, VIRE O CELULAR</h2>
+        <p style="margin-top: 20px;">Modo PAISAGEM necessário!</p>
+        <p style="margin-top: 10px; font-size: 12px;">⬅️ ➡️</p>
+    </div>
+
+    <canvas id="game" width="800" height="480"></canvas>
+
+    <div id="mobileControls">
+        <div class="control-group" id="groupMovement">
+            <div class="btn-touch" id="btnLeft">◀</div>
+            <div class="btn-touch" id="btnRight">▶</div>
+        </div>
+        <div class="control-group" id="groupActions">
+            <div class="btn-interact" id="btnInteract">E</div>
+            <div class="btn-touch" id="btnAttack">⚔️</div>
+            <div class="btn-touch" id="btnJump">▲</div>
+        </div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+        <h1 style="color:#a3d977; font-size: clamp(16px, 5vw, 24px);">PEDRA MÍSTICA 2</h1>
+        <p style="color:#8fd96d; margin-top: 10px; font-size: clamp(10px, 3vw, 14px);">O Pântano das Almas Perdidas</p>
+        <button class="btn-green" onclick="showStoryScreen()" style="margin-top: 30px;">ENTRAR NO PÂNTANO</button>
+    </div>
+
+    <div id="storyScreen" class="overlay" style="display:none;">
+        <h2 style="color:#a3d977; font-size: clamp(14px, 4vw, 20px);">PARTE 2 - PÂNTANO</h2>
+        <div id="storyText" style="max-width: 90%; font-size: clamp(8px, 3vw, 11px); line-height: 1.8; color:#c0e0b0; margin-top: 20px;"></div>
+        <div style="display:flex; gap: 15px; margin-top: 30px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn-green" onclick="skipStory()">PULAR</button>
+            <button class="btn-green" onclick="startGameAfterStory()">CONTINUAR</button>
+        </div>
+    </div>
+
+    <div id="gameOverScreen" class="overlay" style="display:none; background:rgba(20,40,20,0.98);">
+        <h1 style="color:#c23d3d; font-size: clamp(16px, 5vw, 24px);">💀 ENGOLIDO PELO PÂNTANO 💀</h1>
+        <p id="deathReason" style="color:#e66a6a; margin: 20px 0; font-size: clamp(10px, 3vw, 14px);"></p>
+        <button class="btn-red" onclick="restartCurrentLevel()">TENTAR NOVAMENTE</button>
+    </div>
+
+    <div id="finalVictory" class="overlay" style="display:none;">
+        <h1 style="color:#a3d977; font-size: clamp(16px, 5vw, 24px);">🌿 PÂNTANO CONQUISTADO! 🌿</h1>
+        <p style="margin: 15px 0; font-size: clamp(10px, 3vw, 14px);">Sir Elandor recuperou o segundo fragmento da Pedra Mística!</p>
+        <div class="fragment-counter">💎 [2/4] 💎</div>
+        <p style="font-size: clamp(9px, 3vw, 11px); color: #ffaa44;">Fragmento Rosa do Pântano Adquirido</p>
+        <p style="font-size: clamp(8px, 2.5vw, 10px); margin-top: 20px;">A jornada continua...</p>
+        <button class="btn-green" onclick="location.reload()" style="margin-top: 20px;">JOGAR NOVAMENTE</button>
+    </div>
+
+    <script>
+        // DETECÇÃO DE MOBILE E ORIENTAÇÃO
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 900);
+        
+        function checkOrientation() {
+            const warning = document.getElementById('orientationWarning');
+            if (window.innerHeight > window.innerWidth) {
+                warning.style.display = 'flex';
+                return false;
+            } else {
+                warning.style.display = 'none';
+                return true;
+            }
+        }
+        
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            const maxWidth = Math.min(window.innerWidth - 20, 800);
+            const maxHeight = Math.min(window.innerHeight - 20, 480);
+            const scale = Math.min(maxWidth / 800, maxHeight / 480);
+            canvas.style.width = (800 * scale) + 'px';
+            canvas.style.height = (480 * scale) + 'px';
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // ========== VARIÁVEIS GLOBAIS ==========
+        let level = 1, hp = 100, maxHp = 100, gameState = 'start';
+        let player = { x:80, y:300, width:32, height:48, vx:0, vy:0, speed:6.0, jump:-14.8, onGround:false, facing:1, coyote:0, walkAnim: 0, jumpAnim: 0, slowTimer: 0 };
+        let keys = {}, touchKeys = { left: false, right: false, jump: false, interact: false };
+        let gravity = 0.65, swordSwing = 0, invulnerability = 0;
+        let lastRegenTime = 0;
+        const REGEN_INTERVAL = 1500;
+        let fogParticles = [];
+        let fragmentDrop = null;
+        
+        // Sistema de ataques da aranha
+        let spiderAttackState = { type: null, warning: 0, attackTimer: 0, dashX: 0, webEffect: 0, startX: 0, startY: 0 };
+        let groundWebs = [];
+
+        let platforms = [], enemies = [], levers = [], statues = [], holes = [], vines = [], goal = null;
+        let cameraX = 0, levelWidth = 2000;
+        let levelType = "";
+        let bossSpider = null;
+        let portalNext = null;
+        let barrier = null;
+
+        const storyParagraphs = [
+            "Após derrotar o Rei Rato, Sir Elandor adentra o Pântano das Almas Perdidas...",
+            "Enfrente os perigos do brejo e recupere o segundo fragmento da Pedra Mística!"
+        ];
+
+        // FUNÇÃO PARA RESETAR TODOS OS TOUCHES (CORREÇÃO DO BUG)
+        function resetAllTouchInputs() {
+            touchKeys.left = false;
+            touchKeys.right = false;
+            touchKeys.jump = false;
+            touchKeys.interact = false;
+        }
+
+        function typeStory() {
+            let p = 0, c = 0, text = "";
+            const el = document.getElementById('storyText');
+            const interval = setInterval(() => {
+                if (p < storyParagraphs.length) {
+                    text += storyParagraphs[p][c];
+                    el.innerHTML = text + "█";
+                    c++;
+                    if (c >= storyParagraphs[p].length) { text += "<br><br>"; p++; c = 0; }
+                } else {
+                    clearInterval(interval);
+                    el.innerHTML = text;
+                }
+            }, 25);
+        }
+
+        function showStoryScreen() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('storyScreen').style.display = 'flex';
+            gameState = 'story';
+            typeStory();
+        }
+
+        function skipStory() { gameState = 'playing'; document.getElementById('storyScreen').style.display = 'none'; startGame(); }
+        function startGameAfterStory() { gameState = 'playing'; document.getElementById('storyScreen').style.display = 'none'; startGame(); }
+
+        function checkStatuesForUnlock() {
+            if (goal && goal.locked && statues.length === 0) {
+                goal.locked = false;
+            }
+        }
+
+        function createFog() {
+            fogParticles = [];
+            let particleCount = levelType === "Névoa das Almas" ? 150 : 40;
+            for (let i = 0; i < particleCount; i++) {
+                fogParticles.push({
+                    x: Math.random() * levelWidth,
+                    y: Math.random() * 480,
+                    size: 30 + Math.random() * 70,
+                    alpha: 0.2 + Math.random() * 0.4,
+                    speedX: (Math.random() - 0.5) * 1.5,
+                    speedY: (Math.random() - 0.5) * 0.8
+                });
+            }
+        }
+
+        function createLevel(lvl) {
+            platforms = []; enemies = []; levers = []; statues = []; holes = []; vines = []; bossSpider = null;
+            fragmentDrop = null;
+            portalNext = null;
+            barrier = null;
+            groundWebs = [];
+            spiderAttackState = { type: null, warning: 0, attackTimer: 0, dashX: 0, webEffect: 0, startX: 0, startY: 0 };
+            
+            hp = maxHp = 100;
+            cameraX = 0;
+            lastRegenTime = performance.now();
+            player.slowTimer = 0;
+
+            levelWidth = lvl >= 8 ? 1480 : 1750 + lvl * 70;
+
+            if (lvl === 1) {
+                levelType = "Cipós Vivos";
+                platforms.push({x: 0, y: 420, w: 380, h: 60});
+                holes.push({x: 380, y: 420, w: 180, h: 100});
+                platforms.push({x: 560, y: 420, w: 340, h: 60});
+                holes.push({x: 900, y: 420, w: 160, h: 100});
+                platforms.push({x: 1060, y: 420, w: 300, h: 60});
+
+                vines.push({x: 480, y: 80, length: 320, swing: 0});
+                vines.push({x: 720, y: 60, length: 280, swing: 0});
+
+                goal = {x: 1250, y: 330, w: 50, h: 90, locked: false};
+                createFog();
+            } else if (lvl === 10) {
+                levelType = "BOSS - Aranha Rainha";
+                levelWidth = 1400;
+                platforms.push({x:0, y:420, w:1400, h:60});
+                goal = {x:1250, y:330, w:50, h:90, locked:true};
+                barrier = {x: 1300, y: 300, w: 20, h: 120};
+                bossSpider = {x: 700, y: 350, w: 80, h: 60, hp: 500, maxHp: 500, legsAngle: 0, attackCooldown: 0, mouthOpen: 0, dashEffect: 0 };
+                createFog();
+            } else {
+                const levelTypes = ["Alavancas do Brejo", "Estátuas Ancestrais", "Névoa das Almas"];
+                levelType = levelTypes[(lvl-1) % 3];
+                let x = 0;
+                while (x < levelWidth) {
+                    let w = 280 + Math.random()*200;
+                    platforms.push({x: x, y: 420, w: w, h: 60});
+                    if (x > 200 && x < levelWidth - 400) holes.push({x: x + w, y: 420, w: 130 + Math.random()*90, h: 100});
+                    x += w + 110 + Math.random()*80;
+                }
+                for (let i = 350; i < levelWidth-400; i += 420) {
+                    platforms.push({x: i, y: 260 + Math.random()*50, w: 170, h: 25});
+                    enemies.push({x: i+40, y: 390, w: 44, h: 38, type: "swampbeast", speed: 2.4 + lvl*0.06, dir: 1, walkCycle: 0});
+                    if (Math.random() > 0.4) enemies.push({x: i+180, y: 170, w: 24, h: 24, type: "mosquito", wingAngle: 0});
+                }
+                
+                if (levelType === "Alavancas do Brejo") {
+                    levers.push({x: 600, y: 200, activated: false, id: 1});
+                    levers.push({x: levelWidth - 600, y: 180, activated: false, id: 2});
+                    goal = {x: levelWidth - 130, y: 330, w: 50, h: 90, locked: true};
+                    createFog();
+                } else if (levelType === "Estátuas Ancestrais") {
+                    let safeSpots = [];
+                    for (let p of platforms) {
+                        if (p.y === 420) {
+                            let isOverHole = false;
+                            for (let h of holes) {
+                                if (p.x < h.x + h.w && p.x + p.w > h.x) {
+                                    isOverHole = true;
+                                    break;
+                                }
+                            }
+                            if (!isOverHole && p.w > 80) {
+                                for (let pos = p.x + 40; pos < p.x + p.w - 40; pos += 100) {
+                                    safeSpots.push(pos);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (safeSpots.length < 3) {
+                        statues.push({x: 300, y: 370, active: false});
+                        statues.push({x: levelWidth/2, y: 370, active: false});
+                        statues.push({x: levelWidth - 300, y: 370, active: false});
+                    } else {
+                        for (let i = safeSpots.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [safeSpots[i], safeSpots[j]] = [safeSpots[j], safeSpots[i]];
+                        }
+                        let selectedPositions = [];
+                        for (let pos of safeSpots) {
+                            let farEnough = true;
+                            for (let selected of selectedPositions) {
+                                if (Math.abs(pos - selected) < 150) {
+                                    farEnough = false;
+                                    break;
+                                }
+                            }
+                            if (farEnough && selectedPositions.length < 3) {
+                                selectedPositions.push(pos);
+                            }
+                        }
+                        if (selectedPositions.length < 3) {
+                            selectedPositions = safeSpots.slice(0, 3);
+                        }
+                        
+                        for (let i = 0; i < selectedPositions.length; i++) {
+                            statues.push({x: selectedPositions[i], y: 370, active: false});
+                        }
+                    }
+                    goal = {x: levelWidth - 130, y: 330, w: 50, h: 90, locked: true};
+                    createFog();
+                } else if (levelType === "Névoa das Almas") {
+                    goal = {x: levelWidth - 130, y: 330, w: 50, h: 90, locked: false};
+                    createFog();
+                } else {
+                    goal = {x: levelWidth - 130, y: 330, w: 50, h: 90, locked: false};
+                    createFog();
+                }
+            }
+
+            player.x = 80; player.y = 220; player.vx = player.vy = 0;
+        }
+
+        // ATAQUE 1: INVESTIDA
+        function spiderJumpAttack() {
+            if (!bossSpider || bossSpider.attackCooldown > 0) return;
+            spiderAttackState = { 
+                type: "jump", 
+                warning: 20, 
+                attackTimer: 0, 
+                dashX: player.x + 16, 
+                webEffect: 0, 
+                startX: bossSpider.x, 
+                startY: bossSpider.y 
+            };
+            bossSpider.attackCooldown = 50;
+        }
+
+        // ATAQUE 2: MORDIDA
+        function spiderBiteAttack() {
+            if (!bossSpider || bossSpider.attackCooldown > 0) return;
+            spiderAttackState = { 
+                type: "bite", 
+                warning: 20, 
+                attackTimer: 0, 
+                dashX: player.x + 16, 
+                webEffect: 0, 
+                startX: bossSpider.x, 
+                startY: bossSpider.y 
+            };
+            bossSpider.attackCooldown = 45;
+            bossSpider.mouthOpen = 15;
+        }
+
+        // ATAQUE 3: TEIA
+        function spiderWebAttack() {
+            if (!bossSpider || bossSpider.attackCooldown > 0) return;
+            spiderAttackState = { 
+                type: "web", 
+                warning: 35, 
+                attackTimer: 0, 
+                dashX: 0, 
+                webEffect: 0, 
+                startX: bossSpider.x, 
+                startY: bossSpider.y,
+                webX: levelWidth - 100,
+                webY: 80,
+                phase: "climbing"
+            };
+            bossSpider.attackCooldown = 80;
+        }
+
+        function spiderAttack() {
+            if (!bossSpider || bossSpider.attackCooldown > 0) return;
+            
+            const attackType = Math.random();
+            
+            if (attackType < 0.34) {
+                spiderJumpAttack();
+            } else if (attackType < 0.67) {
+                spiderBiteAttack();
+            } else {
+                spiderWebAttack();
+            }
+        }
+
+        function updateGroundWebs() {
+            groundWebs = groundWebs.filter(w => { w.life--; return w.life > 0; });
+            for (let web of groundWebs) {
+                if (Math.abs(player.x - web.x) < 40 && player.y + player.height > web.y) {
+                    if (player.slowTimer <= 0) {
+                        player.slowTimer = 50;
+                        player.speed = 2.5;
+                        setTimeout(() => { if (player.slowTimer === 0) player.speed = 6.0; }, 1000);
+                    }
+                }
+            }
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+
+            if (player.slowTimer > 0) {
+                player.slowTimer--;
+                if (player.slowTimer === 0) {
+                    player.speed = 6.0;
+                }
+            }
+
+            let now = performance.now();
+            if (now - lastRegenTime >= REGEN_INTERVAL) {
+                if (hp < maxHp) hp = Math.min(maxHp, hp + 1);
+                lastRegenTime = now;
+            }
+
+            if (invulnerability > 0) invulnerability--;
+            if (bossSpider && bossSpider.dashEffect > 0) bossSpider.dashEffect--;
+            if (bossSpider && bossSpider.mouthOpen > 0) bossSpider.mouthOpen--;
+
+            if (Math.abs(player.vx) > 0.5 && player.onGround) {
+                player.walkAnim = (player.walkAnim + 0.3) % (Math.PI * 2);
+            } else {
+                player.walkAnim = 0;
+            }
+            if (!player.onGround) {
+                player.jumpAnim = Math.min(player.jumpAnim + 0.25, 1);
+            } else {
+                player.jumpAnim = Math.max(player.jumpAnim - 0.15, 0);
+            }
+
+            player.vx = 0;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchKeys.left) { player.vx = -player.speed; player.facing = -1; }
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchKeys.right) { player.vx = player.speed; player.facing = 1; }
+            
+            if ((keys[' '] || keys['w'] || keys['W'] || keys['ArrowUp'] || touchKeys.jump) && (player.onGround || player.coyote > 0)) {
+                player.vy = player.jump;
+                player.onGround = false;
+                player.coyote = 0;
+                touchKeys.jump = false;
+            }
+            
+            if (keys['e'] || keys['E'] || touchKeys.interact) {
+                triggerInteraction();
+                touchKeys.interact = false;
+            }
+
+            player.vy += gravity;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            if (player.x < 30) player.x = 30;
+            if (player.y > 600) {
+                hp = 0;
+                gameState = 'gameover';
+                document.getElementById('deathReason').innerText = "Caiu no Abismo";
+                document.getElementById('gameOverScreen').style.display = 'flex';
+            }
+
+            player.onGround = false;
+            for (let p of platforms) {
+                if (player.x + player.width > p.x && player.x < p.x + p.w &&
+                    player.y + player.height > p.y && player.y + player.height - player.vy <= p.y + 14) {
+                    if (player.vy > 0) {
+                        player.y = p.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
+                }
+            }
+
+            for (let h of holes) {
+                if (player.x + player.width > h.x && player.x < h.x + h.w && player.y + player.height > h.y + 30) {
+                    hp = 0;
+                    gameState = 'gameover';
+                    document.getElementById('deathReason').innerText = "Caiu no Buraco";
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                }
+            }
+
+            // Barreira
+            if (barrier && goal && goal.locked) {
+                if (player.x + player.width > barrier.x && player.x < barrier.x + barrier.w) {
+                    player.x = barrier.x - player.width;
+                }
+            }
+
+            if (swordSwing > 0) swordSwing -= 0.15;
+
+            vines.forEach(v => {
+                v.swing = (v.swing || 0) + 0.08;
+                let vineX = v.x + Math.sin(v.swing) * 45;
+                if (Math.abs(player.x + 16 - vineX) < 55 && player.y > v.y && player.y < v.y + v.length) {
+                    takeDamage(8, "Cipó Vivo");
+                }
+            });
+
+            // INIMIGOS
+            for (let e of enemies) {
+                if (e.type === "swampbeast") {
+                    e.walkCycle = (e.walkCycle || 0) + 0.15;
+                    let newX = e.x + e.speed * e.dir;
+                    let willFall = false;
+                    for (let h of holes) {
+                        if (newX + e.w > h.x && newX < h.x + h.w) {
+                            willFall = true;
+                            break;
+                        }
+                    }
+                    if (willFall) {
+                        e.dir *= -1;
+                    } else {
+                        e.x = newX;
+                    }
+                }
+                if (e.type === "mosquito") {
+                    e.wingAngle = (e.wingAngle || 0) + 0.3;
+                    e.x += Math.sin(Date.now()/150) * 4;
+                    e.y += Math.cos(Date.now()/200) * 2.5;
+                }
+
+                if (Math.hypot(e.x + e.w/2 - (player.x + 16), e.y + e.h/2 - (player.y + 24)) < 45) {
+                    takeDamage(e.type === "swampbeast" ? 16 : 9, e.type === "swampbeast" ? "Monstro do Brejo" : "Mosquito Vampírico");
+                }
+            }
+
+            if (levelType === "Névoa das Almas") {
+                if (Math.random() < 0.03) {
+                    takeDamage(2, "Névoa Corrosiva");
+                }
+                fogParticles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    if (p.x < -100) p.x = levelWidth + 50;
+                    if (p.x > levelWidth + 100) p.x = -50;
+                    if (p.y < -50) p.y = 500;
+                    if (p.y > 530) p.y = -50;
+                });
+            }
+
+            // ARANHA SEGUE O JOGADOR
+            if (bossSpider && !spiderAttackState.type) {
+                if (bossSpider.x < player.x - 50) {
+                    bossSpider.x += 1.5;
+                } else if (bossSpider.x > player.x + 50) {
+                    bossSpider.x -= 1.5;
+                }
+                bossSpider.x = Math.min(Math.max(bossSpider.x, 200), 1100);
+            }
+
+            // ATAQUES DA ARANHA
+            if (bossSpider) {
+                if (bossSpider.attackCooldown > 0) bossSpider.attackCooldown--;
+                
+                // ATAQUE DE PULO
+                if (spiderAttackState.type === "jump") {
+                    if (spiderAttackState.warning > 0) {
+                        spiderAttackState.warning--;
+                        if (spiderAttackState.warning === 0) {
+                            spiderAttackState.attackTimer = 15;
+                        }
+                    } else if (spiderAttackState.attackTimer > 0) {
+                        spiderAttackState.attackTimer--;
+                        let t = 1 - (spiderAttackState.attackTimer / 15);
+                        bossSpider.x = spiderAttackState.startX + (spiderAttackState.dashX - spiderAttackState.startX) * t;
+                        bossSpider.y = spiderAttackState.startY - Math.sin(t * Math.PI) * 100;
+                        if (spiderAttackState.attackTimer === 0) {
+                            bossSpider.y = spiderAttackState.startY;
+                            if (Math.abs(bossSpider.x - (player.x + 16)) < 60 && Math.abs(bossSpider.y - player.y) < 60) {
+                                takeDamage(20, "Investida da Aranha");
+                            }
+                            spiderAttackState = { type: null, warning: 0, attackTimer: 0, dashX: 0, webEffect: 0, startX: 0, startY: 0 };
+                        }
+                    }
+                }
+                
+                // ATAQUE DE MORDIDA
+                if (spiderAttackState.type === "bite") {
+                    if (spiderAttackState.warning > 0) {
+                        spiderAttackState.warning--;
+                        if (spiderAttackState.warning === 0) {
+                            spiderAttackState.attackTimer = 10;
+                        }
+                    } else if (spiderAttackState.attackTimer > 0) {
+                        spiderAttackState.attackTimer--;
+                        let t = 1 - (spiderAttackState.attackTimer / 10);
+                        bossSpider.x = spiderAttackState.startX + (spiderAttackState.dashX - spiderAttackState.startX) * t;
+                        if (spiderAttackState.attackTimer === 5) {
+                            bossSpider.mouthOpen = 10;
+                        }
+                        if (spiderAttackState.attackTimer === 0) {
+                            if (Math.abs(bossSpider.x - (player.x + 16)) < 50 && Math.abs(bossSpider.y - player.y) < 50) {
+                                takeDamage(25, "Mordida da Aranha");
+                            }
+                            spiderAttackState = { type: null, warning: 0, attackTimer: 0, dashX: 0, webEffect: 0, startX: 0, startY: 0 };
+                        }
+                    }
+                }
+                
+                // ATAQUE DE TEIA
+                if (spiderAttackState.type === "web") {
+                    if (spiderAttackState.phase === "climbing") {
+                        if (spiderAttackState.warning > 0) {
+                            spiderAttackState.warning--;
+                            let t = 1 - (spiderAttackState.warning / 35);
+                            bossSpider.x = spiderAttackState.startX + (spiderAttackState.webX - spiderAttackState.startX) * t;
+                            bossSpider.y = spiderAttackState.startY + (spiderAttackState.webY - spiderAttackState.startY) * t;
+                            if (spiderAttackState.warning === 0) {
+                                spiderAttackState.phase = "spitting";
+                                spiderAttackState.attackTimer = 20;
+                            }
+                        }
+                    } else if (spiderAttackState.phase === "spitting") {
+                        spiderAttackState.attackTimer--;
+                        if (spiderAttackState.attackTimer === 15) {
+                            for (let i = -4; i <= 4; i++) {
+                                groundWebs.push({ x: player.x + i * 30, y: 400, life: 120 });
+                            }
+                        }
+                        if (spiderAttackState.attackTimer === 0) {
+                            spiderAttackState.phase = "descending";
+                            spiderAttackState.attackTimer = 20;
+                        }
+                    } else if (spiderAttackState.phase === "descending") {
+                        spiderAttackState.attackTimer--;
+                        let t = 1 - (spiderAttackState.attackTimer / 20);
+                        bossSpider.x = spiderAttackState.webX + (spiderAttackState.startX - spiderAttackState.webX) * t;
+                        bossSpider.y = spiderAttackState.webY + (spiderAttackState.startY - spiderAttackState.webY) * t;
+                        if (spiderAttackState.attackTimer === 0) {
+                            spiderAttackState = { type: null, warning: 0, attackTimer: 0, dashX: 0, webEffect: 0, startX: 0, startY: 0, phase: null };
+                        }
+                    }
+                }
+                
+                if (spiderAttackState.webEffect > 0) spiderAttackState.webEffect--;
+                if (bossSpider.dashEffect > 0) bossSpider.dashEffect--;
+                
+                if (bossSpider.attackCooldown === 0 && spiderAttackState.attackTimer === 0 && spiderAttackState.warning === 0 && spiderAttackState.type === null) {
+                    spiderAttack();
+                }
+                
+                bossSpider.legsAngle = (bossSpider.legsAngle || 0) + 0.12;
+            }
+            
+            updateGroundWebs();
+
+            // FRAGMENTO DROPA E COLETA
+            if (fragmentDrop && !fragmentDrop.collected) {
+                if (Math.abs(player.x - fragmentDrop.x) < 35 && Math.abs(player.y - fragmentDrop.y) < 35) {
+                    fragmentDrop.collected = true;
+                    portalNext = { x: 1250, y: 300, w: 80, h: 100 };
+                    barrier = null;
+                    goal.locked = false;
+                }
+            }
+            
+            if (portalNext && !portalNext.collected) {
+                if (Math.abs(player.x - portalNext.x) < 50 && Math.abs(player.y - portalNext.y) < 60) {
+                    level = 11;
+                    document.getElementById('finalVictory').style.display = 'flex';
+                    gameState = 'victory';
+                }
+            }
+
+            if (player.x - cameraX > 450) cameraX = player.x - 450;
+            if (player.x - cameraX < 200) cameraX = player.x - 200;
+            if (cameraX < 0) cameraX = 0;
+            if (cameraX > levelWidth - 800) cameraX = levelWidth - 800;
+
+            if (goal && !portalNext && Math.abs((player.x + player.width/2) - goal.x) < 40 && Math.abs((player.y + player.height/2) - (goal.y + 45)) < 50) {
+                if (!goal.locked) advanceToNextLevel();
+            }
+        }
+
+        function attack() {
+            if (swordSwing > 0) return;
+            swordSwing = 1.4;
+
+            let attackDamage = 38;
+
+            enemies = enemies.filter(e => {
+                const dist = Math.hypot(e.x - player.x, e.y - player.y);
+                if (dist < 90) return false;
+                return true;
+            });
+
+            let statuesBefore = statues.length;
+            statues = statues.filter(s => {
+                const dist = Math.hypot((player.x + 16) - s.x, (player.y + 24) - s.y);
+                if (dist < 85) return false;
+                return true;
+            });
+            
+            if (statuesBefore > statues.length) checkStatuesForUnlock();
+
+            if (bossSpider && spiderAttackState.type !== "web") {
+                if (Math.hypot(bossSpider.x + 40 - (player.x + 16), bossSpider.y + 30 - (player.y + 24)) < 90) {
+                    bossSpider.hp -= attackDamage;
+                    
+                    // VERIFICA SE A ARANHA MORREU E CRIA O FRAGMENTO
+                    if (bossSpider.hp <= 0 && !fragmentDrop) {
+                        bossSpider = null;
+                        fragmentDrop = { x: player.x, y: 380, w: 20, h: 20, collected: false };
+                        console.log("Fragmento dropado na posição:", player.x, 380);
+                    }
+                }
+            }
+        }
+
+        function triggerInteraction() {
+            let anyChanged = false;
+            levers.forEach(l => {
+                if (!l.activated && Math.abs((player.x + 16) - l.x) < 60 && Math.abs((player.y + 24) - l.y) < 70) {
+                    l.activated = true;
+                    anyChanged = true;
+                }
+            });
+            if (anyChanged && levers.length > 0 && levers.every(l => l.activated)) {
+                if(goal) goal.locked = false;
+            }
+        }
+
+        function takeDamage(amount, reason) {
+            if (invulnerability > 0) return;
+            hp -= amount;
+            invulnerability = 45;
+            if (hp <= 0) {
+                hp = 0;
+                gameState = 'gameover';
+                document.getElementById('deathReason').innerText = `Morto por: ${reason}`;
+                document.getElementById('gameOverScreen').style.display = 'flex';
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0a1f0a'; ctx.fillRect(0, 0, 800, 480);
+
+            fogParticles.forEach(p => {
+                let rx = p.x - cameraX;
+                if (rx > -150 && rx < 950) {
+                    ctx.fillStyle = `rgba(80, 110, 70, ${p.alpha * 0.6})`;
+                    ctx.fillRect(rx, p.y, p.size, p.size);
+                }
+            });
+
+            ctx.fillStyle = '#132612';
+            for(let i = 0; i < 7; i++) ctx.fillRect((i*140 - (cameraX*0.25)%140), 60, 95, 340);
+
+            platforms.forEach(p => {
+                let rx = p.x - cameraX;
+                ctx.fillStyle = '#2e4a2e'; ctx.fillRect(rx, p.y, p.w, p.h);
+                ctx.fillStyle = '#1f331f'; ctx.fillRect(rx, p.y+10, p.w, p.h-10);
+            });
+
+            // Barreira visual
+            if (barrier) {
+                let rx = barrier.x - cameraX;
+                ctx.fillStyle = 'rgba(200, 0, 0, 0.8)';
+                ctx.fillRect(rx, barrier.y, barrier.w, barrier.h);
+                ctx.fillStyle = '#ff0000';
+                ctx.font = '6px "Press Start 2P"';
+                ctx.fillText("BLOQUEADO", rx + 2, barrier.y + 60);
+            }
+
+            // Poças de teia
+            for (let web of groundWebs) {
+                let rx = web.x - cameraX;
+                ctx.fillStyle = `rgba(150, 200, 255, ${web.life / 120 * 0.6})`;
+                ctx.fillRect(rx - 25, web.y - 5, 50, 12);
+                ctx.fillStyle = `rgba(100, 150, 255, ${web.life / 120 * 0.4})`;
+                ctx.fillRect(rx - 20, web.y - 3, 40, 8);
+            }
+
+            vines.forEach(v => {
+                let rx = v.x - cameraX;
+                let swingX = Math.sin(v.swing || 0) * 45;
+                ctx.strokeStyle = '#1e3a1e';
+                ctx.lineWidth = 14;
+                ctx.beginPath();
+                ctx.moveTo(rx, v.y);
+                ctx.lineTo(rx + swingX, v.y + v.length);
+                ctx.stroke();
+            });
+
+            levers.forEach(l => {
+                let rx = l.x - cameraX;
+                ctx.fillStyle = '#8B7355';
+                ctx.fillRect(rx - 8, l.y - 20, 16, 40);
+                ctx.fillStyle = '#C0A080';
+                ctx.fillRect(rx - 4, l.y - 25, 8, 15);
+                if (l.activated) {
+                    ctx.fillStyle = '#00FF00';
+                    ctx.fillRect(rx - 6, l.y - 32, 12, 10);
+                } else {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(rx - 6, l.y - 32, 12, 10);
+                }
+                
+                if (Math.abs((player.x + 16) - l.x) < 60 && Math.abs((player.y + 24) - l.y) < 70 && !l.activated) {
+                    ctx.fillStyle = '#FFFF00';
+                    ctx.font = '7px "Press Start 2P"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText("Pressione E", rx, l.y - 45);
+                    ctx.textAlign = 'left';
+                }
+            });
+
+            statues.forEach(s => {
+                let rx = s.x - cameraX;
+                ctx.fillStyle = '#2e8b57'; 
+                ctx.fillRect(rx - 20, s.y - 15, 40, 25);
+                ctx.fillStyle = '#1e5f3a'; 
+                ctx.fillRect(rx - 22, s.y - 5, 44, 12);
+                ctx.fillStyle = '#2e8b57'; 
+                ctx.fillRect(rx - 14, s.y - 28, 28, 18);
+                ctx.fillStyle = '#ff0000'; 
+                ctx.fillRect(rx - 9, s.y - 24, 6, 6);
+                ctx.fillRect(rx + 3, s.y - 24, 6, 6);
+                ctx.fillStyle = '#ffd700'; 
+                ctx.fillRect(rx - 10, s.y - 12, 20, 8);
+                
+                if (Math.abs((player.x + 16) - s.x) < 85) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '7px "Press Start 2P"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText("ATAQUE!", rx, s.y - 40);
+                    ctx.textAlign = 'left';
+                }
+            });
+
+            // INIMIGOS
+            for (let e of enemies) {
+                let rx = e.x - cameraX;
+                if (e.type === "swampbeast") {
+                    let legCycle = Math.sin(e.walkCycle || 0) * 5;
+                    
+                    ctx.fillStyle = '#2d5a2d';
+                    ctx.fillRect(rx, e.y, 44, 38);
+                    ctx.fillStyle = '#4a8c4a';
+                    ctx.fillRect(rx+6, e.y+8, 32, 20);
+                    ctx.fillStyle = '#1e3a1e';
+                    ctx.fillRect(rx+10, e.y-8, 24, 12);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(rx+14, e.y-5, 5, 5);
+                    ctx.fillRect(rx+25, e.y-5, 5, 5);
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillRect(rx+15, e.y-4, 3, 3);
+                    ctx.fillRect(rx+26, e.y-4, 3, 3);
+                    ctx.fillStyle = '#5a3a1a';
+                    ctx.fillRect(rx+12, e.y-12, 4, 6);
+                    ctx.fillRect(rx+28, e.y-12, 4, 6);
+                    ctx.fillStyle = '#2d5a2d';
+                    ctx.fillRect(rx-6 + legCycle/2, e.y+15, 8, 12);
+                    ctx.fillRect(rx+42 - legCycle/2, e.y+15, 8, 12);
+                    ctx.fillStyle = '#8b6914';
+                    ctx.fillRect(rx-8 + legCycle/2, e.y+22, 4, 4);
+                    ctx.fillRect(rx-8 + legCycle/2, e.y+18, 4, 3);
+                    ctx.fillRect(rx+48 - legCycle/2, e.y+22, 4, 4);
+                    ctx.fillRect(rx+48 - legCycle/2, e.y+18, 4, 3);
+                    ctx.fillStyle = '#8b0000';
+                    ctx.fillRect(rx+18, e.y+2, 8, 3);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(rx+20, e.y+1, 2, 2);
+                    ctx.fillRect(rx+24, e.y+1, 2, 2);
+                    ctx.fillStyle = '#1a4a1a';
+                    ctx.fillRect(rx+15, e.y-2, 3, 4);
+                    ctx.fillRect(rx+22, e.y-2, 3, 4);
+                    ctx.fillRect(rx+29, e.y-2, 3, 4);
+                    
+                } else if (e.type === "mosquito") {
+                    let wingAngle = (e.wingAngle || 0);
+                    let wingSin = Math.sin(wingAngle) * 12;
+                    
+                    ctx.fillStyle = '#4a2a5a';
+                    ctx.fillRect(rx+4, e.y+8, 16, 12);
+                    ctx.fillStyle = 'rgba(200, 200, 255, 0.6)';
+                    ctx.fillRect(rx-2 + wingSin, e.y+6, 10, 6);
+                    ctx.fillRect(rx+16 - wingSin, e.y+6, 10, 6);
+                    ctx.fillStyle = '#3a1a4a';
+                    ctx.fillRect(rx+8, e.y, 8, 10);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(rx+9, e.y+2, 3, 3);
+                    ctx.fillRect(rx+12, e.y+2, 3, 3);
+                    ctx.fillStyle = '#8b0000';
+                    ctx.fillRect(rx+14, e.y+10, 6, 4);
+                    ctx.strokeStyle = '#3a1a4a';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(rx+6, e.y+18);
+                    ctx.lineTo(rx+2, e.y+24);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(rx+10, e.y+18);
+                    ctx.lineTo(rx+8, e.y+25);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(rx+14, e.y+18);
+                    ctx.lineTo(rx+16, e.y+25);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(rx+18, e.y+18);
+                    ctx.lineTo(rx+22, e.y+24);
+                    ctx.stroke();
+                }
+            }
+
+            // BOSS ARANHA
+            if (bossSpider) {
+                let rx = bossSpider.x - cameraX;
+                let legsAngle = bossSpider.legsAngle || 0;
+                
+                if (spiderAttackState.warning > 0 && spiderAttackState.type) {
+                    let warningColor = spiderAttackState.type === "jump" ? "rgba(255, 100, 0, 0.5)" :
+                                     spiderAttackState.type === "bite" ? "rgba(255, 0, 0, 0.5)" :
+                                     "rgba(0, 200, 255, 0.5)";
+                    ctx.fillStyle = warningColor;
+                    ctx.fillRect(rx - 20, bossSpider.y - 20, 120, 80);
+                    
+                    let warningText = spiderAttackState.type === "jump" ? "INVESTIDA!" :
+                                     spiderAttackState.type === "bite" ? "MORDIDA!" : "TEIA!";
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = '7px "Press Start 2P"';
+                    ctx.fillText(warningText, rx + 10, bossSpider.y - 25);
+                }
+                
+                if (bossSpider.dashEffect > 0) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${bossSpider.dashEffect / 10})`;
+                    ctx.fillRect(rx - 20, bossSpider.y - 10, 120, 80);
+                }
+                
+                ctx.fillStyle = '#2a1a3a';
+                ctx.beginPath();
+                ctx.ellipse(rx + 45, bossSpider.y + 35, 35, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#3a2a4a';
+                ctx.beginPath();
+                ctx.ellipse(rx + 25, bossSpider.y + 25, 22, 18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(rx + 15, bossSpider.y + 18, 5, 5);
+                ctx.fillRect(rx + 28, bossSpider.y + 16, 5, 5);
+                ctx.fillRect(rx + 35, bossSpider.y + 18, 5, 5);
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(rx + 16, bossSpider.y + 19, 3, 3);
+                ctx.fillRect(rx + 29, bossSpider.y + 17, 3, 3);
+                ctx.fillRect(rx + 36, bossSpider.y + 19, 3, 3);
+                
+                if (bossSpider.mouthOpen > 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(rx + 20, bossSpider.y + 32, 5, 12);
+                    ctx.fillRect(rx + 30, bossSpider.y + 32, 5, 12);
+                    ctx.fillStyle = '#ff6666';
+                    ctx.fillRect(rx + 21, bossSpider.y + 35, 3, 8);
+                    ctx.fillRect(rx + 31, bossSpider.y + 35, 3, 8);
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(rx + 20, bossSpider.y + 32, 4, 6);
+                    ctx.fillRect(rx + 30, bossSpider.y + 32, 4, 6);
+                }
+                
+                ctx.strokeStyle = '#2a1a3a';
+                ctx.lineWidth = 5;
+                let legOffset = Math.sin(legsAngle) * 14;
+                
+                ctx.beginPath();
+                ctx.moveTo(rx + 20, bossSpider.y + 30);
+                ctx.lineTo(rx - 15 + legOffset, bossSpider.y + 20);
+                ctx.lineTo(rx - 30, bossSpider.y + 30);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(rx + 20, bossSpider.y + 35);
+                ctx.lineTo(rx - 20 + legOffset, bossSpider.y + 35);
+                ctx.lineTo(rx - 35, bossSpider.y + 45);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(rx + 70, bossSpider.y + 30);
+                ctx.lineTo(rx + 105 - legOffset, bossSpider.y + 20);
+                ctx.lineTo(rx + 120, bossSpider.y + 30);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(rx + 70, bossSpider.y + 35);
+                ctx.lineTo(rx + 110 - legOffset, bossSpider.y + 35);
+                ctx.lineTo(rx + 125, bossSpider.y + 45);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#5a4a6a';
+                ctx.fillRect(rx + 40, bossSpider.y + 45, 10, 6);
+                ctx.fillRect(rx + 50, bossSpider.y + 47, 8, 5);
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(rx + 5, bossSpider.y - 15, bossSpider.w - 10, 6);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(rx + 5, bossSpider.y - 15, (bossSpider.hp / bossSpider.maxHp) * (bossSpider.w - 10), 6);
+                
+                ctx.fillStyle = '#ffaa44';
+                ctx.font = '6px "Press Start 2P"';
+                ctx.fillText("ARANHA", rx + 25, bossSpider.y - 20);
+            }
+            
+            // FRAGMENTO
+            if (fragmentDrop && !fragmentDrop.collected) {
+                let rx = fragmentDrop.x - cameraX;
+                ctx.fillStyle = '#ff69b4';
+                ctx.fillRect(rx, fragmentDrop.y, 20, 20);
+                ctx.fillStyle = '#ff1493';
+                ctx.fillRect(rx + 5, fragmentDrop.y + 5, 10, 10);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px "Press Start 2P"';
+                ctx.fillText("💎", rx + 2, fragmentDrop.y + 18);
+                ctx.fillStyle = `rgba(255, 105, 180, ${0.3 + Math.sin(Date.now() / 200) * 0.2})`;
+                ctx.fillRect(rx - 5, fragmentDrop.y - 5, 30, 30);
+            }
+            
+            // PORTAL
+            if (portalNext) {
+                let rx = portalNext.x - cameraX;
+                ctx.fillStyle = '#6a0dad';
+                ctx.fillRect(rx, portalNext.y, portalNext.w, portalNext.h);
+                ctx.fillStyle = '#9370db';
+                ctx.fillRect(rx + 10, portalNext.y + 15, 60, 70);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText("PRÓXIMA", rx + 15, portalNext.y + 35);
+                ctx.fillText("PARTE", rx + 25, portalNext.y + 55);
+            }
+
+            // PERSONAGEM
+            let px = player.x - cameraX;
+            if (invulnerability === 0 || Math.floor(invulnerability / 4) % 2 === 0) {
+                ctx.fillStyle = '#718096'; 
+                ctx.fillRect(px, player.y, 32, 48);
+                ctx.fillStyle = '#4a5568'; 
+                ctx.fillRect(px+6, player.y+12, 20, 22);
+                ctx.fillStyle = '#2d3748';
+                ctx.fillRect(px+8, player.y+4, 16, 12);
+                
+                if (player.onGround && Math.abs(player.vx) > 0.5) {
+                    let legOffset = Math.sin(player.walkAnim) * 8;
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(px+6 + legOffset/2, player.y+38, 6, 10);
+                    ctx.fillRect(px+20 - legOffset/2, player.y+38, 6, 10);
+                    ctx.fillStyle = '#2d3748';
+                    ctx.fillRect(px+8 + legOffset/3, player.y+40, 4, 8);
+                    ctx.fillRect(px+20 - legOffset/3, player.y+40, 4, 8);
+                } else {
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(px+6, player.y+38, 6, 10);
+                    ctx.fillRect(px+20, player.y+38, 6, 10);
+                    ctx.fillStyle = '#2d3748';
+                    ctx.fillRect(px+8, player.y+40, 4, 8);
+                    ctx.fillRect(px+20, player.y+40, 4, 8);
+                }
+                
+                if (player.jumpAnim > 0.1) {
+                    let armUp = player.jumpAnim * 10;
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(px+2, player.y+18 - armUp, 5, 12);
+                    ctx.fillRect(px+25, player.y+18 - armUp, 5, 12);
+                } else if (Math.abs(player.vx) > 0.5 && player.onGround) {
+                    let armSwing = Math.sin(player.walkAnim) * 6;
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(px+2 + armSwing, player.y+20, 5, 12);
+                    ctx.fillRect(px+25 - armSwing, player.y+20, 5, 12);
+                } else {
+                    ctx.fillStyle = '#4a5568';
+                    ctx.fillRect(px+2, player.y+20, 5, 12);
+                    ctx.fillRect(px+25, player.y+20, 5, 12);
+                }
+                
+                ctx.fillStyle = '#ffd700'; 
+                ctx.fillRect(px + (player.facing>0?18:4), player.y+8, 12, 7);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(px + (player.facing>0?20:6), player.y+9, 3, 3);
+                
+                if (player.slowTimer > 0) {
+                    ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+                    ctx.fillRect(px, player.y, 32, 48);
+                }
+            }
+
+            // ESPADA
+            ctx.save();
+            let swordX = px + (player.facing > 0 ? 28 : -10);
+            ctx.translate(swordX, player.y + 28);
+            let angle = swordSwing > 0 ? (swordSwing * 1.8 * player.facing) : (player.facing > 0 ? -0.3 : 2.2);
+            ctx.rotate(angle);
+            ctx.fillStyle = '#e2e8f0'; 
+            ctx.fillRect(0, -4, 38, 8);
+            ctx.fillStyle = '#b45309'; 
+            ctx.fillRect(-6, -2, 8, 5);
+            ctx.restore();
+
+            if (goal && !portalNext) {
+                let gx = goal.x - cameraX;
+                ctx.fillStyle = goal.locked ? '#4a1515' : '#0f5132'; 
+                ctx.fillRect(gx, goal.y, goal.w, goal.h);
+                ctx.lineWidth = 4; 
+                ctx.strokeStyle = goal.locked ? '#ff3333' : '#2ec4b6'; 
+                ctx.strokeRect(gx, goal.y, goal.w, goal.h);
+                ctx.fillStyle = goal.locked ? '#210505' : '#072a1d'; 
+                ctx.fillRect(gx + 8, goal.y + 8, goal.w - 16, goal.h - 16);
+                
+                if (!goal.locked) {
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillStyle = `rgba(46, 196, 182, ${0.3 + Math.sin(Date.now() / 500 + i) * 0.2})`;
+                        ctx.fillRect(gx + 4 + i*14, goal.y + 15, 8, 60);
+                    }
+                }
+            }
+
+            if (levelType === "Névoa das Almas") {
+                ctx.fillStyle = 'rgba(80, 110, 70, 0.35)';
+                ctx.fillRect(0, 0, 800, 480);
+            }
+
+            // HUD
+            ctx.fillStyle = '#1a202c'; ctx.fillRect(20, 20, 220, 24);
+            ctx.fillStyle = hp > 40 ? '#76c043' : '#f04e5a'; 
+            ctx.fillRect(22, 22, (hp / maxHp) * 216, 20);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 8px "Press Start 2P"';
+            ctx.fillText(`PV ${hp}/${maxHp}`, 30, 35);
+            ctx.fillStyle = '#ffd700'; ctx.font = '7px "Press Start 2P"';
+            ctx.fillText(`Nível: ${level} [${levelType}]`, 260, 35);
+            
+            if (player.slowTimer > 0) {
+                ctx.fillStyle = '#66ccff';
+                ctx.font = '6px "Press Start 2P"';
+                ctx.fillText("🐌 LENTIDÃO", 260, 50);
+            }
+            
+            if (levelType === "Estátuas Ancestrais" && goal && goal.locked && statues.length > 0) {
+                ctx.fillStyle = '#ffaa44';
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText(`SAPOS: ${statues.length}`, 260, 65);
+            }
+            
+            if (levelType === "Alavancas do Brejo" && goal && goal.locked && levers.length > 0) {
+                let activeCount = levers.filter(l => l.activated).length;
+                ctx.fillStyle = '#ffaa44';
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText(`ALAVANCAS: ${activeCount}/${levers.length}`, 260, 65);
+            }
+            
+            if (levelType === "Névoa das Almas") {
+                ctx.fillStyle = '#66ff66';
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText("🌫️ NÉVOA ATIVA", 260, 65);
+            }
+        }
+
+        function gameLoop() {
+            if (gameState === 'playing') update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function advanceToNextLevel() {
+            level++;
+            if (level > 10) return;
+            createLevel(level);
+        }
+
+        function restartCurrentLevel() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            gameState = 'playing';
+            createLevel(level);
+        }
+
+        function startGame() { 
+            gameState = 'playing'; 
+            createLevel(level); 
+        }
+
+        canvas.addEventListener('mousedown', attack);
+        window.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            if (e.key.toLowerCase() === 'e') triggerInteraction();
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('keyup', e => keys[e.key] = false);
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            attack();
+        });
+        canvas.addEventListener('touchmove', (e) => e.preventDefault());
+
+        // FUNÇÃO BIND TOUCH CORRIGIDA (SEM O BUG DE MOVIMENTO SOZINHO)
+        function bindTouch(id, press, release) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            
+            const handleStart = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                press();
+            };
+            
+            const handleEnd = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if(release) release();
+            };
+            
+            btn.addEventListener('touchstart', handleStart, { passive: false });
+            btn.addEventListener('touchend', handleEnd);
+            btn.addEventListener('touchcancel', handleEnd); // CRUCIAL: quando o toque é interrompido
+            btn.addEventListener('mousedown', handleStart);
+            btn.addEventListener('mouseup', handleEnd);
+        }
+        
+        bindTouch('btnLeft', () => touchKeys.left = true, () => touchKeys.left = false);
+        bindTouch('btnRight', () => touchKeys.right = true, () => touchKeys.right = false);
+        bindTouch('btnJump', () => touchKeys.jump = true, () => touchKeys.jump = false);
+        bindTouch('btnAttack', attack, null);
+        bindTouch('btnInteract', () => { triggerInteraction(); }, null);
+
+        // RESET GLOBAL DE TOUCHES (CORREÇÃO DO BUG)
+        document.addEventListener('touchcancel', resetAllTouchInputs);
+        document.addEventListener('touchend', resetAllTouchInputs);
+
+        if (isMobile) {
+            document.getElementById('mobileControls').style.display = 'flex';
+        }
+
+        setTimeout(checkOrientation, 100);
+        checkOrientation();
+        
+        gameLoop();
+    </script>
+</body>
+</html>
